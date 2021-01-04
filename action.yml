@@ -1,0 +1,33 @@
+name: 'Jenkins Job Trigger'
+description: 'Trigger a Jenkins job'
+branding:
+  icon: 'terminal'
+  color: 'green'
+inputs:
+  url:
+    description: 'Jenkins full URL including http/https protocol'
+    required: true
+  user_name: 
+    description: 'User name of Jenkins'
+    required: true
+  api_token:
+    description: 'Jenkins API token'
+    required: true
+  job_name:
+    description: 'Job name'
+    required: true
+  parameter:
+    description: 'Job parameter in JSON format. ex) {"param1":"value1"} '
+    required: false
+  wait:
+    description: 'Waiting for job completion or not'
+    required: false
+    default: "true"
+  timeout:
+    description: 'Timeout (seconds) for github action. Set 600s as default'
+    required: false
+    default: "600"
+  
+runs:
+  using: 'node12'
+  main: 'index.js'
