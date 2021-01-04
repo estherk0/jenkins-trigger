@@ -1,5 +1,6 @@
-# jenkins-trigger-action
-Trigger jenkins job in github action and wait for job completion.
+# Jenkins job trigger action
+Github Action to trigger jenkins job and wait for job completion using Jenkins API.  
+Welcome your feedback and request. :open_hands:
 
 ## Usage
 ### Generate API token for Jenkins API
@@ -24,7 +25,7 @@ Please see [How to get the API Token for Jenkins](https://stackoverflow.com/ques
 ### Example
 ```yaml
 - name: Trigger jenkins job
-  uses: jabbukka/jenkins-trigger@master
+  uses: jabbukka/jenkins-trigger@main
   with:
     url: ${{ secrets.JENKINS_URL }}
     job_name: "build_web_application"
