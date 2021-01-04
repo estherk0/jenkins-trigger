@@ -27,6 +27,7 @@ Please see [How to get the API Token for Jenkins](https://stackoverflow.com/ques
   uses: jabbukka/jenkins-trigger@master
   with:
     url: ${{ secrets.JENKINS_URL }}
+    job_name: "build_web_application"
     user_name: ${{ secrets.JENKINS_USER }}
     api_token: ${{ secrets.JENKINS_TOKEN }}
     wait: "true"
