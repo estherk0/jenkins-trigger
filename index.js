@@ -86,7 +86,7 @@ async function main() {
     await requestJenkinsJob(jobName, params);
     
     // Waiting for job completion
-    if (core.getInput('wait' == 'true')) {
+    if (core.getInput('wait') == 'true') {
       await waitJenkinsJob(jobName, startTs);
     }    
   } catch (err) {
