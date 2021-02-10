@@ -40,6 +40,7 @@ async function requestJenkinsJob(jobName, params) {
 }
 
 async function getJobStatus(jobName) {
+  const jenkinsEndpoint = core.getInput('url');
   const req = {
     method: 'get',
     url: `${jenkinsEndpoint}/job/${jobName}/lastBuild/api/json`,
