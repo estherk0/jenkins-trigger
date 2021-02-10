@@ -16,9 +16,10 @@ const sleep = (seconds) => {
 };
 
 async function requestJenkinsJob(jobName, params) {
+  const jenkinsEndpoint = core.getInput('url');
   const req = {
     method: 'POST',
-    url: `https://jenkins.hanu-ci.io/job/${jobName}/buildWithParameters`,
+    url: `${jenkinsEndpoint}/job/${jobName}/buildWithParameters`,
     form: params,
     headers: {
       'Authorization': `Basic ${API_TOKEN}`
@@ -41,7 +42,7 @@ async function requestJenkinsJob(jobName, params) {
 async function getJobStatus(jobName) {
   const req = {
     method: 'get',
-    url: `http://jenkins.hanu-ci.io/job/${jobName}/lastBuild/api/json`,
+    url: `${jenkinsEndpoint}/job/${jobName}/lastBuild/api/json`,
     headers: {
       'Authorization': `Basic ${API_TOKEN}`
     }
