@@ -19,6 +19,7 @@ Please see [How to get the API Token for Jenkins](https://stackoverflow.com/ques
 | api_token | `true` | Jenkins API token |
 | job_name | `true` | Jenkins job name |
 | parameter | false | Job parameter in JSON format. ex) {"param1":"value1"} |
+| headers | false | Additional headers to include in the HTTP requests in JSON format. ex) {"param1":"value1"}  |
 | wait | false | Set true as default. Waiting for job completion or not |
 | timeout | false | Set 600 seconds as default. Timeout (seconds) for github action. |
 
