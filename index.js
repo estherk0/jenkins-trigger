@@ -85,9 +85,10 @@ async function main() {
       'Authorization': `Basic ${API_TOKEN}`
     }
     if (core.getInput('headers')) {
+      let user_headers = JSON.parse(core.getInput('headers'));
       headers = {
         headers,
-        JSON.parse(core.getInput('headers'))
+        user_headers
       }
     }
   
