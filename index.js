@@ -87,11 +87,11 @@ async function main() {
     if (core.getInput('headers')) {
       let user_headers = JSON.parse(core.getInput('headers'));
       headers = {
-        headers,
-        user_headers
+        ...headers,
+        ...user_headers
       }
     }
-  
+    
     // POST API call
     await requestJenkinsJob(jobName, params, headers);
 
