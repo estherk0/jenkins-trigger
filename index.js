@@ -39,11 +39,11 @@ async function requestJenkinsJob(jobName, params) {
   );
 }
 
-async function getJobStatus(jobName) {
+async function getJobStatus(jobName, buildNumber) {
   const jenkinsEndpoint = core.getInput('url');
   const req = {
     method: 'get',
-    url: `${jenkinsEndpoint}/job/${jobName}/lastBuild/api/json`,
+    url: `${jenkinsEndpoint}/job/${jobName}/${buildNumber || 'lastBuild'}/api/json`,
     headers: {
       'Authorization': `Basic ${API_TOKEN}`
     }
@@ -59,9 +59,13 @@ async function getJobStatus(jobName) {
     );
 }
 async function waitJenkinsJob(jobName, timestamp) {
+  let buildNumber = undefined
   core.info(`>>> Waiting for "${jobName}" ...`);
   while (true) {
-    let data = await getJobStatus(jobName);
+    let data = await getJobStatus(jobName, buildNumber);
+    if (data.number) {
+      buildNumber = data.number
+    }
     if (data.timestamp < timestamp) {
       core.info(`>>> Job is not started yet... Wait 5 seconds more...`)
     } else if (data.result == "SUCCESS") {
