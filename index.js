@@ -63,8 +63,9 @@ async function waitJenkinsJob(jobName, timestamp) {
   core.info(`>>> Waiting for "${jobName}" ...`);
   while (true) {
     let data = await getJobStatus(jobName, buildNumber);
-    if (data.number) {
+    if (!buildNumber && data.number) {
       buildNumber = data.number
+      core.info(`>>> Using build number ${buildNumber}`)
     }
     if (data.timestamp < timestamp) {
       core.info(`>>> Job is not started yet... Wait 5 seconds more...`)
