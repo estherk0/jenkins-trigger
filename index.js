@@ -61,6 +61,7 @@ async function getJobStatus(jobName, buildNumber) {
 async function waitJenkinsJob(jobName, timestamp) {
   let buildNumber = undefined
   core.info(`>>> Waiting for "${jobName}" ...`);
+  await sleep(10) // wait for the new job to show up under lastBuild
   while (true) {
     let data = await getJobStatus(jobName, buildNumber);
     if (!buildNumber && data.number) {
