@@ -1,0 +1,39 @@
+on: [push]
+
+jobs:
+  hello_world_job:
+    runs-on: ubuntu-latest
+    name: A job to say hello
+    steps:
+      # To use this repository's private action,
+      # you must check out the repository
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: write jenkins params to file
+        uses: schdck/create-env-json@v1
+        id: create-json
+        with:
+          file-name: 'params.json'
+          token: ${{ secrets.JENKINS_DEV_E2E_JOB_TOKEN }}
+          WWW_URL: "https://www-staging.zyro.space"
+          DASHBOARD_URL: "https://dashboard.zyro.space"
+          BRANCH: "master"
+
+      - id: read-params
+        run: |
+          JSON=$(cat ${{ steps.create-json.outputs.full-path }})
+          echo "$JSON"
+          echo "::set-output name=jenkins-params::${JSON//'%'/'%25'}"
+
+      - name: github trigger test
+        uses: ./ # Uses an action in the root directory
+        id: test
+        with:
+          url: "https://jenkins-dev.zyro.space/"
+          job_name: "dPreview-chrome-dashboard-grid"
+          user_name: ${{ secrets.JENKINS_DEV_USERNAME }}
+          api_token: ${{ secrets.JENKINS_DEV_USER_TOKEN }}
+          parameter: ${{ steps.read-params.outputs.jenkins-params }}
+          wait: "true"
+          timeout: "1000"

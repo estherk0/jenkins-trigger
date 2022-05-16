@@ -11,14 +11,9 @@
     "url": "git+https://github.com/jabbukka/jenkins-trigger-action.git"
   },
   "author": {
-    "name": "Esther Kim",
-    "email": "jabbukka@naver.com"
+    "name": "Mantas Gurskis"
   },
   "license": "Apache 2.0",
-  "bugs": {
-    "url": "https://github.com/jabbukka/jenkins-trigger-action/issues"
-  },
-  "homepage": "https://github.com/jabbukka/jenkins-trigger-action",
   "dependencies": {
     "@actions/core": "1.2.3",
     "@actions/github": "2.1.1",
