@@ -19,6 +19,9 @@ inputs:
   parameter:
     description: 'Job parameter in JSON format. ex) {"param1":"value1"} '
     required: false
+  headers:
+    description: 'Additional headers to include in the HTTP requests in JSON format. ex) {"param1":"value1"} '
+    required: false
   wait:
     description: 'Waiting for job completion or not'
     required: false
