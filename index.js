@@ -47,7 +47,12 @@ async function getJobStatus(jobName, headers) {
           clearTimeout(timer);
           reject(err);
         }
+        try {
         resolve(JSON.parse(body));
+        } catch(err) {
+          core.info(`Failed to parse body err: ${err}, body: ${body}`});
+          resolve({timestamp: 0}); // try again
+        }
       })
     );
 }
