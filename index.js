@@ -14,12 +14,29 @@ const sleep = (seconds) => {
 
 async function requestJenkinsJob(jobName, params, headers) {
   const jenkinsEndpoint = core.getInput('url');
+
+  const jsonReq = {
+    method: 'GET',
+    url: `${jenkinsEndpoint}/job/${jobName}/api/json`,
+    headers: headers
+  };
+  const isParameterized = await new Promise((resolve, reject) => 
+    request(jsonReq, (err, res, body) => {
+      if (err) {
+        core.setFailed(err);
+        core.error(JSON.stringify(err));
+        clearTimeout(timer);
+        reject();
+      }
+      resolve(!!(body.search("ParametersDefinitionProperty")));
+    })
+  );
   const req = {
     method: 'POST',
-    url: `${jenkinsEndpoint}/job/${jobName}${params ? '/buildWithParameters' : '/build'}`,
-    form: params || {},
+    url: `${jenkinsEndpoint}/job/${jobName}${isParameterized ? '/buildWithParameters' : '/build'}`,
+    form: isParameterized ? params : {},
     headers: headers
-  }
+  };
   await new Promise((resolve, reject) => request(req)
     .on('response', (res) => {
       core.info(`>>> Job is started!`);
