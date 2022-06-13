@@ -34,7 +34,7 @@ async function requestJenkinsJob(jobName, params, headers) {
   const req = {
     method: 'POST',
     url: `${jenkinsEndpoint}/job/${jobName}${isParameterized ? '/buildWithParameters' : '/build'}`,
-    form: isParameterized ? params : {},
+    form: isParameterized ? params : undefined,
     headers: headers
   };
   await new Promise((resolve, reject) => request(req)
@@ -94,7 +94,7 @@ async function waitJenkinsJob(jobName, timestamp, headers) {
 async function main() {
   try {
     // User input params
-    let params = undefined;
+    let params = {};
     let startTs = + new Date();
     let jobName = core.getInput('job_name');
     if (core.getInput('parameter')) {
