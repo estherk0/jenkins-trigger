@@ -1,6 +1,9 @@
 const request = require('request');
 const core = require('@actions/core');
 
+// create auth token for Jenkins API
+const API_TOKEN = Buffer.from(`${core.getInput('user_name')}:${core.getInput('api_token')}`).toString('base64');
+
 let timer = setTimeout(() => {
   core.setFailed("Job Timeout");
   core.error("Exception Error: Timed out");
@@ -12,66 +15,105 @@ const sleep = (seconds) => {
   });
 };
 
-async function requestJenkinsJob(jobName, params, headers) {
+// returns the queue item url from the response's location header
+async function triggerJenkinsJob(jobName, params) {
   const jenkinsEndpoint = core.getInput('url');
   const req = {
     method: 'POST',
     url: `${jenkinsEndpoint}/job/${jobName}/buildWithParameters`,
     form: params,
-    headers: headers
+    headers: {
+      'Authorization': `Basic ${API_TOKEN}`
+    }
   }
-  await new Promise((resolve, reject) => request(req)
-    .on('response', (res) => {
-      core.info(`>>> Job is started!`);
-      resolve();
-    })
-    .on("error", (err) => {
-      core.setFailed(err);
-      core.error(JSON.stringify(err));
-      clearTimeout(timer);
-      reject();
+  return new Promise((resolve, reject) =>
+    request(req, (err, res) => {
+      if (err) {
+        core.setFailed(err);
+        core.error(JSON.stringify(err));
+        clearTimeout(timer);
+        reject();
+        return;
+      }
+      const location = res.headers['location'];
+      if (!location) {
+        const errorMessage = "Failed to find location header in response!";
+        core.setFailed(errorMessage);
+        core.error(errorMessage);
+        clearTimeout(timer);
+        reject();
+        return;
+      }
+
+      resolve(location);
     })
   );
 }
 
-async function getJobStatus(jobName, headers) {
-  const jenkinsEndpoint = core.getInput('url');
+async function getJobStatus(jobName, statusUrl) {
+  if (!statusUrl.endsWith('/'))
+    statusUrl += '/';
+
   const req = {
-    method: 'get',
-    url: `${jenkinsEndpoint}/job/${jobName}/lastBuild/api/json`,
-    headers: headers
+    method: 'GET',
+    url: `${statusUrl}api/json`,
+    headers: {
+      'Authorization': `Basic ${API_TOKEN}`
+    }
   }
   return new Promise((resolve, reject) =>
       request(req, (err, res, body) => {
         if (err) {
           clearTimeout(timer);
           reject(err);
+          return;
         }
         resolve(JSON.parse(body));
       })
     );
 }
-async function waitJenkinsJob(jobName, timestamp, headers) {
-  core.info(`>>> Waiting for "${jobName}" ...`);
+
+// see https://issues.jenkins.io/browse/JENKINS-12827
+async function waitJenkinsJob(jobName, queueItemUrl, timestamp) {
+  const sleepInterval = 5;
+  let buildUrl = undefined
+  core.info(`>>> Waiting for '${jobName}' ...`);
   while (true) {
-    let data = await getJobStatus(jobName, headers);
-    if (data.timestamp < timestamp) {
-      core.info(`>>> Job is not started yet... Wait 5 seconds more...`)
-    } else if (data.result == "SUCCESS") {
-      core.info(`>>> Job "${data.fullDisplayName}" successfully completed!`);
-      break;
-    } else if (data.result == "FAILURE" || data.result == "ABORTED") {
-      throw new Error(`Failed job ${data.fullDisplayName}`);
-    } else {
-      core.info(`>>> Current Duration: ${data.duration}. Expected: ${data.estimatedDuration}`);
+    // check the queue until the job is assigned a build number
+    if (!buildUrl) {
+      let queueData = await getJobStatus(jobName, queueItemUrl);
+
+      if (queueData.cancelled)
+        throw new Error(`Job '${jobName}' was cancelled.`);
+
+      if (queueData.executable && queueData.executable.url) {
+        buildUrl = queueData.executable.url; 
+        core.info(`>>> Job '${jobName}' started executing. BuildUrl=${buildUrl}`);
+      }
+
+      if (!buildUrl) {
+        core.info(`>>> Job '${jobName}' is queued (Reason: '${queueData.why}'). Sleeping for ${sleepInterval}s...`);
+        await sleep(sleepInterval);
+        continue;
+      }
     }
-    await sleep(5); // API call interval
+
+    let buildData = await getJobStatus(jobName, buildUrl);
+
+    if (buildData.result == "SUCCESS") {
+      core.info(`>>> Job '${buildData.fullDisplayName}' completed successfully!`);
+      break;
+    } else if (buildData.result == "FAILURE" || buildData.result == "ABORTED") {
+      throw new Error(`Job '${buildData.fullDisplayName}' failed.`);
+    }
+
+    core.info(`>>> Job '${buildData.fullDisplayName}' is executing (Duration: ${buildData.duration}ms, Expected: ${buildData.estimatedDuration}ms). Sleeping for ${sleepInterval}s...`);
+    await sleep(sleepInterval); // API call interval
   }
 }
 
 async function main() {
   try {
-    // User input params
     let params = {};
     let startTs = + new Date();
     let jobName = core.getInput('job_name');
@@ -79,25 +121,14 @@ async function main() {
       params = JSON.parse(core.getInput('parameter'));
       core.info(`>>> Parameter ${params.toString()}`);
     }
-    // create auth token for Jenkins API
-    const API_TOKEN = Buffer.from(`${core.getInput('user_name')}:${core.getInput('api_token')}`).toString('base64');
-    let headers = {
-      'Authorization': `Basic ${API_TOKEN}`
-    }
-    if (core.getInput('headers')) {
-      let user_headers = JSON.parse(core.getInput('headers'));
-      headers = {
-        ...headers,
-        ...user_headers
-      }
-    }
-    
     // POST API call
-    await requestJenkinsJob(jobName, params, headers);
+    let queueItemUrl = await triggerJenkinsJob(jobName, params);
+
+    core.info(`>>> Job '${jobName}' was queued successfully. QueueUrl=${queueItemUrl}`);
 
     // Waiting for job completion
     if (core.getInput('wait') == 'true') {
-      await waitJenkinsJob(jobName, startTs, headers);
+      await waitJenkinsJob(jobName, queueItemUrl, startTs);
     }
   } catch (err) {
     core.setFailed(err.message);
