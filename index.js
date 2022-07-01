@@ -96,7 +96,7 @@ async function main() {
     // User input params
     let params = {};
     let startTs = + new Date();
-    let jobName = encodeURIComponent(core.getInput('job_name'));
+    let jobName = core.getInput('job_name');
     if (core.getInput('parameter')) {
       params = JSON.parse(core.getInput('parameter'));
       core.info(`>>> Parameter ${params.toString()}`);
