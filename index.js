@@ -28,7 +28,7 @@ async function requestJenkinsJob(jobName, params, headers) {
         clearTimeout(timer);
         reject();
       }
-      resolve(!!(body.search("ParametersDefinitionProperty")));
+      resolve(body.search("ParametersDefinitionProperty") >= 0);
     })
   );
   const req = {
